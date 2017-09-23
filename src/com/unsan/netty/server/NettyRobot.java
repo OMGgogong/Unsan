@@ -10,14 +10,18 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.CharsetUtil;
 
 /**
@@ -29,12 +33,12 @@ import io.netty.util.CharsetUtil;
  */
 public class NettyRobot extends BaseRobot {
 	private Logger log = LoggerFactory.getLogger(getClass());
-	private static final String IP = "127.0.0.1";
 	private static final int PORT = 6666;
 	private static final int WORK_GROUP = Runtime.getRuntime().availableProcessors()*2+1;
 	private static final EventLoopGroup bossGroup = new NioEventLoopGroup(1);
 	private static final EventLoopGroup workerGroup = new NioEventLoopGroup(WORK_GROUP);
 	private static volatile boolean ISSTOP  = false;
+	
 	@Override
 	protected void onCreate() {
 		log.info(String.format(" %s 创建....", getClass().getName()));
@@ -48,15 +52,13 @@ public class NettyRobot extends BaseRobot {
 		//启动
 		ServerBootstrap bootstrap = new ServerBootstrap();
 		bootstrap.group(bossGroup, workerGroup);
-		bootstrap.channel(NioServerSocketChannel.class);
-		bootstrap.childHandler(new ChannelInitializer<Channel>() {
+		bootstrap.channel(NioServerSocketChannel.class).
+		option(ChannelOption.SO_BACKLOG, 100)
+		.handler(new LoggingHandler(LogLevel.INFO))
+		.childHandler(new ChannelInitializer<SocketChannel>() {
 			@Override
-			protected void initChannel(Channel ch) throws Exception {
+			protected void initChannel(SocketChannel ch) throws Exception {
 				ChannelPipeline pipeline = ch.pipeline();
-				pipeline.addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4,0,4));
-				pipeline.addLast(new LengthFieldPrepender(4));
-				pipeline.addLast(new StringDecoder(CharsetUtil.UTF_8));
-				pipeline.addLast(new StringEncoder(CharsetUtil.UTF_8));
 				pipeline.addLast(new NettyRobotHandler());
 				
 			}
@@ -64,8 +66,7 @@ public class NettyRobot extends BaseRobot {
 		});
 		
 		try {
-			ChannelFuture f = bootstrap.bind(IP,PORT).sync();
-			f.channel().closeFuture().sync();
+			ChannelFuture f = bootstrap.bind(PORT).sync();
 			System.out.println("TCP窗口服务器已经启动！");
 		} catch (InterruptedException e) {
 			log.info("IP---端口绑定失败！"+e.toString());

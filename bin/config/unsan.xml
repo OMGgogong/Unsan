@@ -21,4 +21,14 @@
 		<workThreadNum>30</workThreadNum>
 	</robot>
 	
+	<robot>
+		<name>netty</name>
+		<!-- 配置绝对路径 -->
+		<confPath>D:\\workspaces\\eclipseWorkSpace\\Unsan\\src\\com\\unsan\\netty\\server\\conf\\netty.xml</confPath>
+		<class>com.unsan.netty.server.NettyRobot</class>
+		<!-- 0-10 加载优先级 0优先级最高 10最低 加载顺序 = loadPriority+name -->
+		<loadPriority>5</loadPriority>
+		<workThreadNum>30</workThreadNum>
+	</robot>
+	
 </unsan>
