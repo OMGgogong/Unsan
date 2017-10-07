@@ -92,7 +92,8 @@ public class RobotFactory {
 	private void readCoreFile(){
 		try {
 			read.setEncoding("UTF-8");
-			Document doc = read.read(new File(UnsanParameters.RUNTIME_PATH+"/config/"+UnsanParameters.CONFILE));
+			System.out.println(UnsanParameters.RUNTIME_PATH+File.separatorChar+"conf"+File.separatorChar+UnsanParameters.CONFILE);
+			Document doc = read.read(new File(UnsanParameters.RUNTIME_PATH+File.separatorChar+"conf"+File.separatorChar+UnsanParameters.CONFILE));
 			
 		     Element unsan = doc.getRootElement();
 		    // Element unsan = root.element("robot");
@@ -102,7 +103,10 @@ public class RobotFactory {
 		    	  Map<String, String> map = new HashMap<String, String>();
 		          map.put("name", mod.element("name").getTextTrim());
 		          map.put("class", mod.element("class").getTextTrim());
-		          map.put("confPath", mod.element("confPath").getTextTrim());
+		          if(mod.element("confPath")!=null){
+		        	  map.put("confPath", mod.element("confPath").getTextTrim());
+		          }
+		         
 		          if(mod.element("loadPriority")!=null){
 		        	  map.put("loadPriority", mod.element("loadPriority").getTextTrim());
 		          }else{

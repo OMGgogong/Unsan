@@ -1,6 +1,7 @@
 package com.unsan.msg;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 /**
  * 机器人通过激光发送消息
@@ -18,8 +19,10 @@ public class LaserLight implements Serializable ,Comparable<LaserLight>{
 	private String msg;
 	private int level = 0;
 	
+	private String noid = null ;
 	public long msgcreatetime = 0L;
     public LaserLight() {
+    	noid = UUID.randomUUID().toString();
     	msgcreatetime =  System.currentTimeMillis();
 	}
 	public String getFromRobotName() {
@@ -64,5 +67,17 @@ public class LaserLight implements Serializable ,Comparable<LaserLight>{
 
 	    return rs;
 	  }
+	public String getNoid() {
+		return noid;
+	}
+	public void setNoid(String noid) {
+		this.noid = noid;
+	}
+	public long getMsgcreatetime() {
+		return msgcreatetime;
+	}
+	public void setMsgcreatetime(long msgcreatetime) {
+		this.msgcreatetime = msgcreatetime;
+	}
 	
 }

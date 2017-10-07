@@ -54,6 +54,9 @@ public abstract class BaseRobot {
 	 * @param filePath
 	 */
 	public void assemble(String filePath){
+		if(filePath==null){
+			return ;
+		}
 		this.filePath = filePath;
 		try {
 			properties.load(new FileReader(filePath));
