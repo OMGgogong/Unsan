@@ -10,23 +10,22 @@
 		<loadPriority>4</loadPriority>
 		<workThreadNum>30</workThreadNum>
 	</robot>
-	
+	<!--
 	<robot>
 		<name>wali</name>
-		<!-- 配置绝对路径 
-		<confPath>D:\\workspaces\\eclipseWorkSpace\\Unsan\\src\\com\\unsan\\example\\internalCommunication\\service\\conf\\wali.xml</confPath>-->
+		 配置绝对路径 
+		<confPath>D:\\workspaces\\eclipseWorkSpace\\Unsan\\src\\com\\unsan\\example\\internalCommunication\\service\\conf\\wali.xml</confPath>
 		<class>com.unsan.example.internalCommunication.service.Wali</class>
-		<!-- 0-10 加载优先级 0优先级最高 10最低 加载顺序 = loadPriority+name -->
+		 0-10 加载优先级 0优先级最高 10最低 加载顺序 = loadPriority+name 
 		<loadPriority>5</loadPriority>
 		<workThreadNum>30</workThreadNum>
-	</robot>
-	
+	</robot>-->
 	<robot>
 		<name>netty</name>
-		<!-- 配置绝对路径 
+			<!--	 配置绝对路径 
 		<confPath>D:\\workspaces\\eclipseWorkSpace\\Unsan\\src\\com\\unsan\\netty\\server\\conf\\netty.xml</confPath>-->
-		<class>com.unsan.netty.server.NettyRobot</class>
-		<!-- 0-10 加载优先级 0优先级最高 10最低 加载顺序 = loadPriority+name -->
+		<class>com.unsan.netty.core.server.NettyRobot</class>
+		<!--	 0-10 加载优先级 0优先级最高 10最低 加载顺序 = loadPriority+name -->
 		<loadPriority>5</loadPriority>
 		<workThreadNum>30</workThreadNum>
 	</robot>

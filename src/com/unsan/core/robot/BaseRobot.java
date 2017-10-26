@@ -350,7 +350,7 @@ public abstract class BaseRobot {
 		
 		BaseRobot robot = RobotFactory.getInstance().getRobots().get(robotName);
 		
-		
+		msg.setFromRobotName(robotName);
 	//	robot.msgQueue.offer(msg);
 		
 	

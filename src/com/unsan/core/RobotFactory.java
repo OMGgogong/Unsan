@@ -1,6 +1,11 @@
 package com.unsan.core;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -17,8 +22,11 @@ import org.dom4j.io.SAXReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.unsan.core.classLoader.PrivateClassLoader;
+import com.unsan.core.classLoader.PrivateURLClassLoader;
 import com.unsan.core.constants.UnsanParameters;
 import com.unsan.core.robot.BaseRobot;
+import com.unsan.core.utils.FileUtils;
 
 public class RobotFactory {
 	  private Logger log;
@@ -92,7 +100,7 @@ public class RobotFactory {
 	private void readCoreFile(){
 		try {
 			read.setEncoding("UTF-8");
-			System.out.println(UnsanParameters.RUNTIME_PATH+File.separatorChar+"conf"+File.separatorChar+UnsanParameters.CONFILE);
+			log.debug("核心目录: "+UnsanParameters.RUNTIME_PATH+File.separatorChar+"conf"+File.separatorChar+UnsanParameters.CONFILE);
 			Document doc = read.read(new File(UnsanParameters.RUNTIME_PATH+File.separatorChar+"conf"+File.separatorChar+UnsanParameters.CONFILE));
 			
 		     Element unsan = doc.getRootElement();
@@ -105,6 +113,9 @@ public class RobotFactory {
 		          map.put("class", mod.element("class").getTextTrim());
 		          if(mod.element("confPath")!=null){
 		        	  map.put("confPath", mod.element("confPath").getTextTrim());
+		          }
+		          if(mod.element("privateLib")!=null){
+		        	  map.put("privateLib", mod.element("privateLib").getTextTrim());
 		          }
 		         
 		          if(mod.element("loadPriority")!=null){
@@ -129,10 +140,72 @@ public class RobotFactory {
 	
 	/*
 	 * 从拓展目录下获取
+	 * 以Unsan开头 以。xml结尾的module
 	 */
 	private void readExpandFile(){
 		//TODO:://从拓展目录下获得机器人
-	}
+		read.setEncoding("UTF-8");
+		log.debug("拓展路径: "+UnsanParameters.External_PATH);
+		File exRootDir = new File(UnsanParameters.External_PATH);
+		//Document doc = read.read();
+		
+		 if (!exRootDir.exists()) {
+		      this.log.info("无外部模块需要加载");
+		      return;
+		    }
+		 
+		 
+		 List<File> unsanXml = new ArrayList<>();
+		 FileUtils.readUnsanXml(unsanXml, exRootDir);
+			for(File fxml: unsanXml ){
+				//String privateLib = FileUtils.readPrivateLibPath(fxml);
+				try {
+		          FileInputStream in = new FileInputStream(fxml);
+		          Document doc = read.read(in);
+					 Element unsan = doc.getRootElement();
+					     Iterator<?> it = unsan.elementIterator("robot");
+					     while (it.hasNext()) {
+					    	 Element mod = (Element)it.next();
+					    	  Map<String, String> map = new HashMap<String, String>();
+					          map.put("name", mod.element("name").getTextTrim());
+					          map.put("class", mod.element("class").getTextTrim());
+					          if(mod.element("confPath")!=null){
+					        	  map.put("confPath", mod.element("confPath").getTextTrim());
+					          }
+					          if(mod.element("privateLib")!=null){
+					        	  map.put("privateLib", mod.element("privateLib").getTextTrim());
+					          }
+					         
+					          if(mod.element("loadPriority")!=null){
+					        	  map.put("loadPriority", mod.element("loadPriority").getTextTrim());
+					          }else{
+					        	  map.put("loadPriority", UnsanParameters.DEFAULT_LOAD_PRIORITY);
+					          }
+					          if(mod.element("workThreadNum")!=null){
+					        	  map.put("workThreadNum", mod.element("workThreadNum").getTextTrim());
+					          }else{
+					        	  map.put("workThreadNum", UnsanParameters.DEFAULT_THREAD_NUM);
+					          }
+					          map.put("xmlPath", fxml.getAbsolutePath());
+					          robotConf.add(map);
+					     }
+			          
+					
+					
+				} catch (DocumentException | FileNotFoundException e) {
+					this.log.error(String.format("获取模块[%s]配置失败", new Object[] { fxml.getName() }), e);
+					e.printStackTrace();
+				}
+		          
+		         
+				
+				
+			}
+			
+			
+		    
+}
+		
 
 	
 	/**
@@ -150,13 +223,52 @@ public class RobotFactory {
 	 * 加载机器到JVM
 	 */
 	@SuppressWarnings("unchecked")
-	private void loadRobot(Map<String,String> robotMap){
+	private void loadRobot(Map<String,String> robotMap) {
 		
 		String robotClassName =  robotMap.get("class");
 		String robotName =  robotMap.get("name");
 		String filePath =  robotMap.get("confPath");
+		String privateLib =  robotMap.get("privateLib");
+		String xmlPath =  robotMap.get("xmlPath");
 		try {
-			Class<BaseRobot> robotclass = (Class<BaseRobot>) Class.forName(robotClassName);
+			
+			//new PrivateClassLoader(robotName)
+			//sddnew PrivateClassLoader(robotName).findClass("");
+			//直接初始化
+			
+			Class<BaseRobot> robotclass = null;
+			if(privateLib!=null){
+				 robotclass = (Class<BaseRobot>) Class.forName(robotClassName,true,new PrivateURLClassLoader(FileUtils.searchModuleJarFromXml(xmlPath),privateLib));
+			}else{
+				robotclass = (Class<BaseRobot>) Class.forName(robotClassName);
+			}
+			// robotclass = (Class<BaseRobot>) Class.forName(robotClassName,true,new URLClassLoader(FileUtils.searchJarURL(privateLib)));
+			
+			/**
+			 * 判断 该模块下有没有lib包 如果有 先用lib包的jar的classLoader加载类 如果加载不成功则用内存中的类。
+			 * 
+			 */
+//			try {
+//				String className = "ceshi.com.jvm.classload.target.Target";
+//				URLClassLoader load1 = new URLClassLoader(new URL[]{new URL("file:C:\\Users\\Administrator\\Desktop\\target1.jar")});
+//				URLClassLoader load2 = new URLClassLoader(new URL[]{new URL("file:C:\\Users\\Administrator\\Desktop\\target2.jar")});
+//			
+//				 Class<BaseRobot> clazz1 =  (Class<BaseRobot>)Class.forName(className,true,load1);
+//				 
+//				 Class<BaseRobot> clazz2 =  (Class<BaseRobot>)Class.forName(className,true,load2);
+//				BaseRobot taget1 = clazz1.newInstance();
+//				BaseRobot taget2 = clazz2.newInstance();
+//				System.out.println("--------------target start-----------");
+//				taget1.create();
+//				System.out.println("");
+//				taget2.create();
+//				System.out.println("--------------target end-----------");
+//				
+//			} catch (MalformedURLException e) {
+//				// TODO Auto-generated catch block
+//				e.printStackTrace();
+//			}
+			log.debug("【"+robotclass+"】 使用类加载器：：：	"+robotclass.getClassLoader());
 			BaseRobot robot = robotclass.newInstance();
 			robot.assemble(filePath);
 			
@@ -204,6 +316,31 @@ public class RobotFactory {
 		return robots;
 	}
 
+public static void main(String[] args) {
+	
+	try {
+	String className = "ceshi.com.jvm.classload.target.Target";
+	//URLClassLoader load1 = new URLClassLoader(FileUtils.searchJarURL(privateLib));
+	//URLClassLoader load1 = (Class<BaseRobot>) Class.forName(className,true,new URLClassLoader(FileUtils.searchJarURL("C:\\Users\\Administrator\\Desktop\\Unsan\\Unsan_Robot_External\\wali\\privatelib")));
+	//URLClassLoader load2 = new URLClassLoader(new URL[]{new URL("file:C:\\Users\\Administrator\\Desktop\\target2.jar")});
 
+	 Class<BaseRobot> clazz1 =  (Class<BaseRobot>)Class.forName(className,true,new PrivateURLClassLoader(FileUtils.searchJarURL("C:\\Users\\Administrator\\Desktop\\Unsan\\Unsan_Robot_External\\wali\\privatelib"),new PrivateClassLoader("ceshi")));
+	 
+	 //Class<BaseRobot> clazz2 =  (Class<BaseRobot>)Class.forName(className,true,load2);
+	BaseRobot taget1 = clazz1.newInstance();
+	//BaseRobot taget2 = clazz2.newInstance();
+	System.out.println("--------------target start-----------"+clazz1.getClassLoader());
+ 	taget1.create();
+ 	System.out.println("");
+	//taget2.create();
+	System.out.println("--------------target end-----------");
+	
+} catch ( ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+	// TODO Auto-generated catch block
+	e.printStackTrace();
+}
+	
+	
+}
 	
 }

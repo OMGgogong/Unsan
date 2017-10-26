@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import com.unsan.core.constants.UnsanParameters;
 
 public class RobotServer_JVM {
-	Logger LOG = LoggerFactory.getLogger(RobotServer_JVM.class);
+	static Logger LOG = LoggerFactory.getLogger(RobotServer_JVM.class);
 
 	/**
 	 * 程序住入口
@@ -20,12 +20,12 @@ public class RobotServer_JVM {
 		
 		
 		RobotFactory rf = RobotFactory.getInstance();
-		System.out.println("机器启动");
+		LOG.info("机器启动");
 		rf.buildRobots();
 		rf.loadRobots();
 		rf.wakeupAll();
 
 		Runtime.getRuntime().addShutdownHook(new ShutdownHookThread());
-		System.out.println("机器启动成功！");
+		LOG.info("机器启动成功！");
 	}
 }

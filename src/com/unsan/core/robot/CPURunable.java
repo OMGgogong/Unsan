@@ -18,7 +18,6 @@ public class CPURunable implements Runnable{
 	}
 	@Override
 	public void run() {
-		;
 		while(robot.moduleState==2){
 			try {
 			LaserLight LaserLight;
